@@ -1,0 +1,165 @@
+# ReconX global settings.
+#
+# These values are merged over the built-in defaults in core/config_loader.py.
+# Per-target JSON files (target-configs/*.json) override them.
+
+tools:
+  waybackurls: waybackurls
+  gau: gau
+  uro: uro
+  katana: katana
+  subfinder: subfinder
+  nuclei: nuclei
+  unfurl: unfurl
+  httpx: httpx
+  ffuf: ffuf
+
+defaults:
+  # Request pacing.  Keep this conservative on shared infrastructure.
+  rate_limit: 20          # requests per second (global)
+  concurrency: 10         # worker threads
+  timeout: 60             # per-request timeout in seconds
+  chunk_size: 25          # parameters sent per fuzz request
+  max_payloads: 100       # payloads per job
+  max_requests: 20000     # global request budget per subdomain
+  max_jobs: 20000         # generated jobs per subdomain
+  max_header_targets: 25  # URLs used for header checks
+  max_seeds: 120          # katana seed URLs per host (0 = no cap)
+
+  baseline_samples: 1
+  sleep_threshold: 8.0    # seconds before a time-based payload is suspected
+
+  verify_tls: true
+  follow_redirects: false
+  save_evidence: true
+  max_response_bytes: 1000000
+
+  user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36 ReconX/2.0"
+  proxy: ""
+  headers: {}
+
+  # Parameter merging behaviour.
+  cross_page_params: true
+  cross_sub_passive_params: false
+  shared_param_limit: 15
+
+  # Ignored parameter names (fnmatch patterns).
+  ignore_params:
+    - "utm_*"
+    - "fbclid"
+    - "gclid"
+    - "dclid"
+    - "msclkid"
+    - "mc_cid"
+    - "mc_eid"
+    - "_ga"
+    - "_gl"
+    - "ref"
+    - "referrer"
+    - "source"
+    - "yclid"
+    - "igshid"
+    - "__cf_chl_*"
+    - "cf_chl_*"
+
+  # Static extensions excluded from recon / crawling.
+  exclude_extensions:
+    - json
+    - js
+    - mjs
+    - css
+    - scss
+    - map
+    - fnt
+    - ogg
+    - jpg
+    - jpeg
+    - png
+    - svg
+    - img
+    - gif
+    - exe
+    - mp4
+    - flv
+    - pdf
+    - doc
+    - docx
+    - ogv
+    - webm
+    - wmv
+    - webp
+    - mov
+    - mp3
+    - m4a
+    - m4p
+    - ppt
+    - pptx
+    - tif
+    - tiff
+    - ttf
+    - otf
+    - woff
+    - woff2
+    - bmp
+    - ico
+    - eot
+    - htc
+    - swf
+    - rtf
+    - image
+    - rf
+    - txt
+    - xml
+    - zip
+    - gz
+    - tar
+    - rar
+    - 7z
+    - apk
+    - dmg
+    - iso
+    - wasm
+    - mpg
+    - mpeg
+    - avi
+    - webmanifest
+
+  # Extra scope domains; when empty the seed registrable domain is used.
+  scope_domains: []
+
+timeouts:
+  waybackurls: 180
+  gau: 240
+  uro: 120
+  katana: 900
+  # Per-request crawl timeout (seconds). Keep this small: dead or slow pages
+  # otherwise stall a whole host for the full HTTP timeout.
+  katana_request: 15
+  subfinder: 180
+  nuclei: 1800
+
+nuclei:
+  enabled: true
+  templates: nuclei-templates
+  dast: true
+  severity: "low,medium,high,critical"
+  extra_tags: ""
+  max_urls: 200
+  extra_args: []
+
+# Delta notifications after mass-fuzz / single-fuzz.
+# Set enabled: true and provide a Telegram bot token + chat id, a webhook URL,
+# or both. Secrets are redacted before a message is rendered or sent.
+notifications:
+  enabled: false
+  only_on_diff: true          # only notify when new hosts/findings appear
+  telegram_bot_token: ""
+  telegram_chat_id: ""
+  webhook_url: ""
+
+output:
+  formats:
+    - txt
+    - json
+    - html
+  html_theme: dark

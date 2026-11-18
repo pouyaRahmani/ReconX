@@ -1,0 +1,210 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://reconx.local/schemas/target-config.json",
+  "title": "ReconX target configuration",
+  "description": "Per-target options for the ReconX fuzzing pipeline.",
+  "type": "object",
+  "required": [
+    "target"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "target": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Target name used for results/<target>/."
+    },
+    "sub": {
+      "type": "string",
+      "default": "",
+      "description": "Process only this subdomain. Empty means all subdomains."
+    },
+    "seeds": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Seed URLs used for scope derivation."
+    },
+    "cross_page_params": {
+      "type": "boolean",
+      "default": true,
+      "description": "Merge parameters across endpoints with the same method/location/body type."
+    },
+    "cross_sub_passive_params": {
+      "type": "boolean",
+      "default": false,
+      "description": "Merge passive parameters observed across subdomains."
+    },
+    "shared_param_limit": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 15,
+      "description": "Maximum shared parameters injected per endpoint."
+    },
+    "methods": {
+      "type": ["string", "array"],
+      "items": {
+        "type": "string",
+        "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+      },
+      "default": ["GET"],
+      "description": "HTTP methods eligible for parameter fuzzing."
+    },
+    "content_types": {
+      "type": ["string", "array"],
+      "items": {
+        "type": "string",
+        "enum": ["urlencoded", "json", "multipart"]
+      },
+      "default": ["urlencoded"]
+    },
+    "chunk_size": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 25,
+      "description": "Parameters fuzzed per request."
+    },
+    "vulns": {
+      "type": ["string", "array"],
+      "items": {
+        "type": "string",
+        "enum": [
+          "xss",
+          "sqli",
+          "open-redirect",
+          "headers-reflection",
+          "headers-status",
+          "cache-poison"
+        ]
+      },
+      "default": ["xss"],
+      "description": "Vulnerability classes to test."
+    },
+    "rl": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 20,
+      "description": "Global requests per second."
+    },
+    "c": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 10,
+      "description": "Worker threads."
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 60,
+      "description": "Per-request timeout in seconds. Use >= 20 for time-based SQLi."
+    },
+    "max_payloads": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 100
+    },
+    "max_requests": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 20000
+    },
+    "max_jobs": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 20000
+    },
+    "max_header_targets": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 25
+    },
+    "baseline_samples": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
+    },
+    "sleep_threshold": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 8.0
+    },
+    "verify_tls": { "type": "boolean", "default": true },
+    "follow_redirects": { "type": "boolean", "default": false },
+    "save_evidence": { "type": "boolean", "default": true },
+    "max_response_bytes": {
+      "type": "integer",
+      "minimum": 1024,
+      "default": 1000000
+    },
+    "user_agent": { "type": "string", "default": "" },
+    "proxy": {
+      "type": "string",
+      "default": "",
+      "description": "Example: http://127.0.0.1:8080"
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": {}
+    },
+    "ignore_params": {
+      "type": ["string", "array"],
+      "items": { "type": "string" },
+      "default": [],
+      "description": "fnmatch patterns for parameter names to ignore."
+    },
+    "exclude_extensions": {
+      "type": ["string", "array"],
+      "items": { "type": "string" },
+      "default": []
+    },
+    "scope_domains": {
+      "type": ["string", "array"],
+      "items": { "type": "string" },
+      "default": []
+    },
+    "nuclei": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "templates": { "type": ["string", "array"] },
+        "dast": { "type": "boolean", "default": true },
+        "severity": { "type": "string" },
+        "extra_tags": { "type": "string" },
+        "max_urls": { "type": "integer", "minimum": 1 },
+        "extra_args": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "notifications": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Send Telegram/webhook notifications after aggregation."
+        },
+        "only_on_diff": {
+          "type": "boolean",
+          "default": true,
+          "description": "Only notify when new hosts or findings appear."
+        },
+        "telegram_bot_token": { "type": "string", "default": "" },
+        "telegram_chat_id": { "type": "string", "default": "" },
+        "webhook_url": { "type": "string", "default": "" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "formats": {
+          "type": "array",
+          "items": { "enum": ["txt", "json", "html"] }
+        },
+        "html_theme": { "type": "string" }
+      }
+    }
+  }
+}

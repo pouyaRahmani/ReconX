@@ -1,0 +1,40 @@
+id: reconx-open-redirect
+
+info:
+  name: ReconX open redirect
+  author: reconx
+  severity: medium
+  description: |
+    Replaces query parameters with off-site redirect values and inspects the
+    Location/Refresh headers and the response body.
+  reference:
+    - https://owasp.org/www-community/attacks/Unvalidated_Redirects_and_Forwards_Cheat_Sheet
+  tags: reconx,redirect,dast
+
+http:
+  - payloads:
+      redirect:
+        - '//evil.com'
+        - 'https://evil.com'
+        - 'http://evil.com'
+        - '/\evil.com'
+        - '//evil.com/%2f..'
+        - '//evil.com@legitimate.com'
+        - 'https://evil.com%40legitimate.com'
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - '{{redirect}}'
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: header
+        regex:
+          - '(?im)^(location|refresh)\s*:\s*(https?:)?//evil\.com'
+      - type: regex
+        part: body
+        regex:
+          - '(?i)(location|refresh)[^<]{0,80}(https?:)?//evil\.com'

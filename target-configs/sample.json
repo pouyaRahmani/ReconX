@@ -1,0 +1,71 @@
+{
+  "target": "example",
+  "sub": "",
+  "seeds": [
+    "https://example.com"
+  ],
+  "cross_page_params": true,
+  "cross_sub_passive_params": false,
+  "shared_param_limit": 15,
+  "methods": [
+    "GET",
+    "POST"
+  ],
+  "content_types": [
+    "urlencoded",
+    "json"
+  ],
+  "chunk_size": 25,
+  "vulns": [
+    "xss",
+    "sqli",
+    "open-redirect",
+    "headers-reflection",
+    "headers-status",
+    "cache-poison"
+  ],
+  "rl": 20,
+  "c": 10,
+  "timeout": 60,
+  "max_payloads": 80,
+  "max_requests": 20000,
+  "max_jobs": 20000,
+  "max_header_targets": 25,
+  "baseline_samples": 1,
+  "sleep_threshold": 8.0,
+  "verify_tls": true,
+  "follow_redirects": false,
+  "save_evidence": true,
+  "user_agent": "",
+  "proxy": "",
+  "headers": {},
+  "ignore_params": [
+    "utm_*",
+    "fbclid",
+    "gclid",
+    "_ga",
+    "_gl"
+  ],
+  "exclude_extensions": [],
+  "scope_domains": [],
+  "nuclei": {
+    "enabled": true,
+    "dast": true,
+    "severity": "low,medium,high,critical",
+    "max_urls": 200
+  },
+  "notifications": {
+    "enabled": false,
+    "only_on_diff": true,
+    "telegram_bot_token": "",
+    "telegram_chat_id": "",
+    "webhook_url": ""
+  },
+  "output": {
+    "formats": [
+      "txt",
+      "json",
+      "html"
+    ]
+  }
+}

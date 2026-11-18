@@ -1,0 +1,33 @@
+id: reconx-headers-status
+
+info:
+  name: ReconX header access-control bypass
+  author: reconx
+  severity: medium
+  description: |
+    Requests /admin normally and then with common access-control bypass
+    headers.  A baseline error followed by a 200 response is reported.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/05-Authorization_Testing/02-Testing_for_Bypassing_Authorization_Schema
+  tags: reconx,headers,bypass,dast
+
+http:
+  - raw:
+      - |
+        GET /admin HTTP/1.1
+        Host: {{Hostname}}
+      - |
+        GET /admin HTTP/1.1
+        Host: {{Hostname}}
+        X-Original-URL: /admin
+        X-Rewrite-URL: /admin
+        X-Forwarded-For: 127.0.0.1
+        X-Real-IP: 127.0.0.1
+        X-Originating-IP: 127.0.0.1
+        X-Client-IP: 127.0.0.1
+        X-Custom-IP-Authorization: 127.0.0.1
+    req-condition: true
+    matchers:
+      - type: dsl
+        dsl:
+          - 'status_code_1 >= 400 && status_code_2 == 200'

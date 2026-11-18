@@ -1,0 +1,38 @@
+id: reconx-headers-reflection
+
+info:
+  name: ReconX header reflection
+  author: reconx
+  severity: low
+  description: |
+    Sends common proxy/load-balancer headers with a canary value and matches
+    the canary in the response body or headers.
+  reference:
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/03-Testing_for_HTTP_Header_Injection
+  tags: reconx,headers,dast
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+    headers:
+      X-Forwarded-Host: reconx-canary-1337
+      X-Forwarded-For: reconx-canary-1337
+      X-Real-IP: reconx-canary-1337
+      X-Originating-IP: reconx-canary-1337
+      X-Client-IP: reconx-canary-1337
+      X-Remote-Addr: reconx-canary-1337
+      X-Host: reconx-canary-1337
+      Referer: reconx-canary-1337
+      X-Custom-Header: reconx-canary-1337
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'reconx-canary-1337'
+      - type: word
+        part: header
+        words:
+          - 'reconx-canary-1337'

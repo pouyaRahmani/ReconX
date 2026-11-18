@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local configuration and results
+.env
+results/*
+!results/.gitkeep
+!results/README.md
+target-configs/*.json
+!target-configs/sample.json
+!target-configs/schema.json
+target-configs/*.local.json
+*.log
+
+# Local archives, notes, and reference trees
+*.zip
+UniProject.zip
+reconx-go/
+*.pem
+*.key
+*.p12
+*.pfx
