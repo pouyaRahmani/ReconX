@@ -4,6 +4,26 @@ set -euo pipefail
 
 DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+# Make Go/pipx-installed tools reachable even when the caller did not source a
+# shell profile (ssh host ./reconx ..., cron, CI). Interactive shells get the
+# same PATH from the block setup.sh writes to ~/.zshrc / ~/.bashrc.
+go_bin=""
+if command -v go >/dev/null 2>&1; then
+    go_path="$(go env GOPATH 2>/dev/null || true)"
+    if [[ -n "$go_path" ]]; then
+        go_bin="$go_path/bin"
+    fi
+fi
+for tool_dir in "$go_bin" "$HOME/go/bin" "$HOME/.local/bin"; do
+    [[ -n "$tool_dir" ]] || continue
+    case ":$PATH:" in
+        *":$tool_dir:"*) ;;
+        *) PATH="$tool_dir:$PATH" ;;
+    esac
+done
+export PATH
+unset go_bin go_path tool_dir
+
 # Prefer an explicitly configured venv, then the project one, then PATH.
 if [[ -n "${RECONX_VENV:-}" && -x "$RECONX_VENV/bin/python" ]]; then
     PYTHON="$RECONX_VENV/bin/python"
