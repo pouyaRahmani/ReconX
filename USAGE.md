@@ -125,9 +125,8 @@ job-generation time.
 ```bash
 cd ~/ReconX
 
-# Creates .venv, installs Python dependencies, makes ./reconx executable,
-# fixes the shell PATH (Go bin + ~/.local/bin) and the oh-my-zsh `gau` alias,
-# then prints a dependency report. `bash setup.sh` also works when the script
+# Creates .venv, installs Python dependencies, makes ./reconx executable and
+# disables oh-my-zsh's `gau` alias. `bash setup.sh` also works when the script
 # is not executable (git clones from Windows stores mode 100644).
 bash setup.sh
 
@@ -141,12 +140,14 @@ bash setup.sh --install-tools
 
 The `./reconx` launcher prefers `$RECONX_VENV/bin/python`, then `.venv/bin/python`,
 then `python3` on `PATH`. You do not need to activate the virtual environment.
+It also puts `$(go env GOPATH)/bin` and `~/.local/bin` on `PATH` itself, so no
+shell-config edit is needed for `./reconx doctor` or any pipeline command.
 
 > **oh-my-zsh `gau` alias.** The oh-my-zsh `git` plugin defines
-> `alias gau='git add --update'`, which shadows the `gau` URL collector.
-> `setup.sh` appends `unalias gau` to `~/.zshrc` after oh-my-zsh has loaded;
-> open a new shell (or run `unalias gau`) if you configured your shell before
-> this run.
+> `alias gau='git add --update'`, which shadows the `gau` URL collector when
+> you type it by hand. `setup.sh` appends `unalias gau` to `~/.zshrc` after
+> oh-my-zsh has loaded; open a new shell (or run `unalias gau`) if you
+> configured your shell before this run.
 
 ### Manual install
 
@@ -193,13 +194,15 @@ through a shell.
 | `subfinder` | `passive --enumerate` | `go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest` |
 | `nuclei` | `mass-fuzz` / `single-fuzz` | `go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest` |
 
-Add the Go bin directory to `PATH` (put it **first** so the real binaries win):
+If you want to run the tools **by hand** (outside `./reconx`), add their
+directories to your `PATH`:
 
 ```bash
 export PATH="$(go env GOPATH)/bin:$HOME/.local/bin:$PATH"   # add to ~/.bashrc or ~/.zshrc
 ```
 
-`setup.sh` does this for you and also appends `unalias gau` so that
+`./reconx` and `setup.sh` do not require this — the launcher adds both
+directories itself. `setup.sh` only appends `unalias gau` to `~/.zshrc` so
 oh-my-zsh's `gau='git add --update'` alias cannot shadow the tool.
 
 `unfurl` and `httpx` appear in `doctor` as optional tools, but ReconX implements

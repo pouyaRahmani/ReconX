@@ -71,37 +71,45 @@ path_add "$LOCAL_BIN"
 export PATH
 
 # --- shell startup files ---------------------------------------------------
+# The `reconx` launcher puts $(go env GOPATH)/bin and ~/.local/bin on PATH by
+# itself, so a clone needs no PATH edits in ~/.zshrc or ~/.bashrc. The only
+# thing that does need fixing is oh-my-zsh's `alias gau='git add --update'`,
+# which shadows the real gau binary in interactive shells.
 RC_MARKER="# >>> reconx environment >>>"
+RC_END_MARKER="# <<< reconx environment <<<"
 read -r -d '' RC_BLOCK <<'EOF' || true
 # >>> reconx environment >>>
-# Go-installed recon tools (gau, waybackurls, katana, nuclei, …) and the
-# pipx shim directory. Prepended so the real binaries take precedence.
-for _reconx_dir in "$HOME/go/bin" "$HOME/.local/bin"; do
-    case ":$PATH:" in
-        *":$_reconx_dir:"*) ;;
-        *) PATH="$_reconx_dir:$PATH" ;;
-    esac
-done
-export PATH
-unset _reconx_dir
-# oh-my-zsh's git plugin ships `alias gau='git add --update'`, which shadows
-# the gau URL collector. Drop the alias so `gau` means gau everywhere.
+# oh-my-zsh's git plugin aliases `gau` to `git add --update`, which shadows
+# the real gau URL collector. Drop the alias so `gau` means gau.
 unalias gau 2>/dev/null || true
 # <<< reconx environment <<<
 EOF
+
+# Delete an existing block (used to migrate installs that got the old PATH loop).
+remove_rc_block() {
+    local rc="$1"
+    awk -v start="$RC_MARKER" -v end="$RC_END_MARKER" '
+        $0 == start { skip = 1; next }
+        $0 == end   { skip = 0; next }
+        !skip
+    ' "$rc" > "$rc.reconx.tmp" && mv "$rc.reconx.tmp" "$rc"
+}
 
 echo "[ * ] Configuring shell environment"
 for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
     [[ -f "$rc" ]] || continue
     if grep -qF "$RC_MARKER" "$rc" 2>/dev/null; then
-        echo "[ = ] $rc already configured"
+        if grep -qF "_reconx_dir" "$rc" 2>/dev/null; then
+            remove_rc_block "$rc"
+            printf '\n%s\n' "$RC_BLOCK" >> "$rc"
+            echo "[ * ] replaced the old PATH block in $rc (launcher handles PATH)"
+        else
+            echo "[ = ] $rc already configured"
+        fi
         continue
     fi
-    {
-        printf '\n'
-        printf '%s\n' "$RC_BLOCK"
-    } >> "$rc"
-    echo "[ + ] added tool PATH + gau alias fix to $rc"
+    printf '\n%s\n' "$RC_BLOCK" >> "$rc"
+    echo "[ + ] disabled the oh-my-zsh gau alias in $rc"
 done
 
 # Report the alias problem for the shell the user is already in: appending to

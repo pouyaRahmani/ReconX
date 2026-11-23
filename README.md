@@ -86,11 +86,12 @@ bash setup.sh --install-tools
 ```
 
 `setup.sh` creates `.venv/`, installs the Python dependencies, makes `setup.sh`
-and `reconx` executable, prepends `$(go env GOPATH)/bin` and `~/.local/bin` to
-`PATH` (also in `~/.zshrc` / `~/.bashrc`) and removes oh-my-zsh's conflicting
-`alias gau='git add --update'`, so `gau` is always the URL collector. The
-launcher automatically prefers `.venv/bin/python`, so you can run `./reconx`
-without activating the environment.
+and `reconx` executable, and removes oh-my-zsh's conflicting
+`alias gau='git add --update'` from `~/.zshrc`. It does **not** edit your
+`PATH`: the launcher adds `$(go env GOPATH)/bin` and `~/.local/bin` itself, so
+`./reconx` (including `./reconx doctor`) works in any shell. The launcher
+automatically prefers `.venv/bin/python`, so you can run `./reconx` without
+activating the environment.
 
 Manual installation:
 
