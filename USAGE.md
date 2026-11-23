@@ -126,8 +126,14 @@ job-generation time.
 cd ~/ReconX
 
 # Creates .venv, installs Python dependencies, makes ./reconx executable,
-# then prints a dependency report.
-./setup.sh
+# fixes the shell PATH (Go bin + ~/.local/bin) and the oh-my-zsh `gau` alias,
+# then prints a dependency report. `bash setup.sh` also works when the script
+# is not executable (git clones from Windows stores mode 100644).
+bash setup.sh
+
+# Optional: `go install` waybackurls, gau, katana, subfinder, nuclei
+# and `pipx install uro`.
+bash setup.sh --install-tools
 
 # Verify external tools at any time.
 ./reconx doctor
@@ -135,6 +141,12 @@ cd ~/ReconX
 
 The `./reconx` launcher prefers `$RECONX_VENV/bin/python`, then `.venv/bin/python`,
 then `python3` on `PATH`. You do not need to activate the virtual environment.
+
+> **oh-my-zsh `gau` alias.** The oh-my-zsh `git` plugin defines
+> `alias gau='git add --update'`, which shadows the `gau` URL collector.
+> `setup.sh` appends `unalias gau` to `~/.zshrc` after oh-my-zsh has loaded;
+> open a new shell (or run `unalias gau`) if you configured your shell before
+> this run.
 
 ### Manual install
 
@@ -181,11 +193,14 @@ through a shell.
 | `subfinder` | `passive --enumerate` | `go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest` |
 | `nuclei` | `mass-fuzz` / `single-fuzz` | `go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest` |
 
-Add the Go bin directory to `PATH`:
+Add the Go bin directory to `PATH` (put it **first** so the real binaries win):
 
 ```bash
-export PATH="$PATH:$(go env GOPATH)/bin"     # add to ~/.bashrc or ~/.zshrc
+export PATH="$(go env GOPATH)/bin:$HOME/.local/bin:$PATH"   # add to ~/.bashrc or ~/.zshrc
 ```
+
+`setup.sh` does this for you and also appends `unalias gau` so that
+oh-my-zsh's `gau='git add --update'` alias cannot shadow the tool.
 
 `unfurl` and `httpx` appear in `doctor` as optional tools, but ReconX implements
 their roles natively and does not need them.
@@ -1556,7 +1571,9 @@ Then compare the detector output with what you see in Burp's history.
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| `tool not found on PATH` | Go bin directory missing from `PATH`. | Add `$(go env GOPATH)/bin`, restart the shell, run `./reconx doctor`. |
+| `permission denied: ./setup.sh` | Git stored mode `100644` (repo committed from Windows). | `bash setup.sh` once; it re-applies `chmod +x` (and `git update-index --chmod=+x setup.sh reconx` fixes the repo). |
+| `gau` runs `git add --update` | oh-my-zsh's `git` plugin aliases `gau`. | `bash setup.sh` (appends `unalias gau` to `~/.zshrc`), then open a new shell or run `unalias gau`. |
+| `tool not found on PATH` | Go bin directory missing from `PATH`. | Add `$(go env GOPATH)/bin` (first), restart the shell, run `./reconx doctor`. |
 | `PyYAML is required` | Python dependencies not installed. | `./setup.sh` or `pip install -r requirements.txt`. |
 | `python3 -m venv` fails | `python3-venv` missing. | `sudo apt install python3-venv python3-pip`. |
 | `target 'x' has no results yet` | `active`, `aggregate`, or `status` ran before `passive`. | Run `./reconx passive ...` first. |

@@ -473,8 +473,9 @@ def clean(ctx, target, sub, yes):
 @click.pass_context
 def doctor(ctx, optional, as_json):
     """Check external tool availability."""
-    from core.process import which
+    from core.deps import resolve
 
+    settings = ctx.obj.get("settings") if ctx.obj else None
     if as_json:
         payload = []
         for spec in TOOLS:
@@ -484,7 +485,7 @@ def doctor(ctx, optional, as_json):
                 {
                     "name": spec.name,
                     "group": spec.group,
-                    "path": which(spec.name),
+                    "path": resolve(spec.name, settings),
                     "purpose": spec.purpose,
                     "install": spec.install,
                 }
@@ -492,7 +493,7 @@ def doctor(ctx, optional, as_json):
         click.echo(json.dumps(payload, indent=2))
         return
 
-    ok = run_doctor(show_optional=optional)
+    ok = run_doctor(show_optional=optional, settings=settings)
     if not ok:
         ui.warn("some core tools are missing — passive/active recon may be degraded")
 

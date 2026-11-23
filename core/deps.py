@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from core import ui
+from core.config_loader import tool_path
 from core.process import which
 
 
@@ -80,12 +81,23 @@ REQUIRED = {
 }
 
 
-def check(tools: list[str], *, quiet: bool = False) -> tuple[list[str], list[str]]:
+def resolve(name: str, settings: dict | None = None) -> str | None:
+    """Resolve a tool name through ``settings.yaml`` (``tools:``) then PATH."""
+    configured = tool_path(settings, name) if settings else name
+    return which(configured)
+
+
+def check(
+    tools: list[str],
+    *,
+    quiet: bool = False,
+    settings: dict | None = None,
+) -> tuple[list[str], list[str]]:
     """Return ``(found, missing)`` for the requested tool names."""
     found: list[str] = []
     missing: list[str] = []
     for name in tools:
-        path = which(name)
+        path = resolve(name, settings)
         if path:
             found.append(name)
             if not quiet:
@@ -95,22 +107,20 @@ def check(tools: list[str], *, quiet: bool = False) -> tuple[list[str], list[str
     return found, missing
 
 
-def doctor(*, show_optional: bool = True) -> bool:
+def doctor(*, show_optional: bool = True, settings: dict | None = None) -> bool:
     """Print a dependency report.  Returns True when all core tools exist."""
     ui.step("Dependency check")
     rows: list[tuple[str, str, str]] = []
-    core_ok = True
+    paths = {spec.name: resolve(spec.name, settings) for spec in TOOLS}
     for spec in TOOLS:
         if spec.group == "optional" and not show_optional:
             continue
-        path = which(spec.name)
-        status = "OK" if path else "MISSING"
+        status = "OK" if paths[spec.name] else "MISSING"
         rows.append((spec.name, status, spec.purpose))
-        if spec.group == "recon" and not path:
-            core_ok = False
     ui.table(rows, ("tool", "status", "purpose"))
 
-    missing = [spec for spec in TOOLS if spec.group == "recon" and not which(spec.name)]
+    core_ok = all(paths[spec.name] for spec in TOOLS if spec.group == "recon")
+    missing = [spec for spec in TOOLS if spec.group == "recon" and not paths[spec.name]]
     if missing:
         print()
         ui.warn("Missing core tools — install them with:")

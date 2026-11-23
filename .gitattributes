@@ -1,0 +1,13 @@
+# Keep launchers and scripts executable and LF-terminated on every platform.
+# The repository is developed on Windows but deployed to Linux: CRLF line
+# endings break `#!/usr/bin/env bash` with "bad interpreter: /bin/env^M".
+* text=auto
+
+*.sh    text eol=lf
+reconx  text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.txt   text eol=lf

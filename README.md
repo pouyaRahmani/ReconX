@@ -68,21 +68,29 @@ Make sure `$(go env GOPATH)/bin` is on your `PATH`.
 
 ---
 
-## Installation (WSL Kali)
+## Installation (Linux / WSL Kali)
 
 ```bash
 cd ~/ReconX
 
-# 1. Python environment + dependencies
-./setup.sh
+# 1. Python environment + dependencies + shell PATH/alias fixes.
+#    `bash setup.sh` works even when git stored the script as non-executable.
+bash setup.sh
 
-# 2. Verify the external tools
+# 2. Optional: install the Go recon tools (waybackurls, gau, katana,
+#    subfinder, nuclei) and uro through pipx.
+bash setup.sh --install-tools
+
+# 3. Verify the external tools.
 ./reconx doctor
 ```
 
-`setup.sh` creates `.venv/`, installs the Python dependencies and makes the
-launcher executable. The launcher automatically prefers `.venv/bin/python`, so
-you can run `./reconx` without activating the environment.
+`setup.sh` creates `.venv/`, installs the Python dependencies, makes `setup.sh`
+and `reconx` executable, prepends `$(go env GOPATH)/bin` and `~/.local/bin` to
+`PATH` (also in `~/.zshrc` / `~/.bashrc`) and removes oh-my-zsh's conflicting
+`alias gau='git add --update'`, so `gau` is always the URL collector. The
+launcher automatically prefers `.venv/bin/python`, so you can run `./reconx`
+without activating the environment.
 
 Manual installation:
 
@@ -405,6 +413,8 @@ Tests use `tmp_path` and `RECONX_RESULTS`, so they do not touch real results.
 
 | Symptom | Fix |
 |---------|-----|
+| `permission denied: ./setup.sh` or `./reconx` | `git pull` the executable bits, or run `bash setup.sh` once — it re-applies `chmod +x`. |
+| `gau` runs `git add --update` | oh-my-zsh's git plugin aliases `gau`; run `bash setup.sh` (adds `unalias gau` to `~/.zshrc`) or `unalias gau` in the current shell. |
 | `tool not found on PATH` | Install the Go tool and add `$(go env GOPATH)/bin` to `PATH`; run `./reconx doctor`. |
 | `PyYAML is required` | `pip install -r requirements.txt` (or use `./setup.sh`). |
 | `timeout=... too short for SLEEP(15)` | Set `timeout` to at least 20. |
