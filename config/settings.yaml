@@ -14,6 +14,20 @@ tools:
   httpx: httpx
   ffuf: ffuf
 
+# Passenger URL collection with gau.
+#
+# waybackurls already queries the Wayback CDX index in one request, while gau
+# paginates it page by page (a busy domain can mean 100+ pages, each taking
+# seconds). The default provider set therefore uses the APIs that complement
+# waybackurls. Add "wayback" back if you want gau to collect it as well.
+gau:
+  providers:
+    - otx
+    - urlscan
+  threads: 5
+  timeout: 20             # per-request timeout handed to gau
+  extra_args: []
+
 defaults:
   # Request pacing.  Keep this conservative on shared infrastructure.
   rate_limit: 20          # requests per second (global)

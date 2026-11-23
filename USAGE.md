@@ -362,7 +362,9 @@ Behaviour:
 
 1. Builds the host list from the seed, the config seeds and `sub`, `--subs`,
    the existing `subdomains.txt`, and (with `--enumerate`) `subfinder`.
-2. Runs `waybackurls` with the host on stdin and `gau <host> --threads 1 --subs`.
+2. Runs `waybackurls` with the host on stdin and gau with the host plus the
+   flags from the `gau:` settings block (`--providers`, `--threads`, `--timeout`,
+   `--subs`, `extra_args`).
 3. Optionally pipes the combined output through `uro`.
 4. Normalises every URL: lower-case host, IDNA, default-port removal, sorted
    query parameters, fragment removal.
@@ -811,6 +813,25 @@ tools:
 ```
 
 Use this when a tool is installed under a different name or outside `PATH`.
+
+#### `gau`
+
+```yaml
+gau:
+  providers:
+    - otx
+    - urlscan
+  threads: 5
+  timeout: 20             # per-request timeout handed to gau
+  extra_args: []
+```
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `providers` | `otx`, `urlscan` | gau providers. `wayback` is omitted by default because `waybackurls` already queries the Wayback CDX index in one request, while gau paginates it (100+ pages on busy domains). Add `wayback` to restore it; an empty list lets gau use its own defaults. |
+| `threads` | `5` | gau workers. |
+| `timeout` | `20` | Per-request timeout (seconds) passed to gau. `0` leaves gau's default. |
+| `extra_args` | `[]` | Extra gau flags, e.g. `["--fp"]`. |
 
 #### `defaults`
 

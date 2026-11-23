@@ -153,6 +153,35 @@ def _apply_uro(lines: list[str], settings: dict) -> list[str]:
     return lines
 
 
+def _as_int(value, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def gau_args(host: str, settings: dict) -> list[str]:
+    """Build the gau argument list from the ``gau:`` settings block."""
+    opts = settings.get("gau") or {}
+    if not isinstance(opts, dict):
+        opts = {}
+    args = [host, "--subs", "--threads", str(max(1, _as_int(opts.get("threads"), 5)))]
+    request_timeout = _as_int(opts.get("timeout"), 20)
+    if request_timeout > 0:
+        args += ["--timeout", str(request_timeout)]
+    providers = opts.get("providers") or []
+    if isinstance(providers, str):
+        providers = [p.strip() for p in providers.split(",") if p.strip()]
+    providers = [str(p) for p in providers if str(p).strip()]
+    if providers:
+        args += ["--providers", ",".join(providers)]
+    extra = opts.get("extra_args") or []
+    if isinstance(extra, str):
+        extra = [extra]
+    args.extend(str(arg) for arg in extra)
+    return args
+
+
 def _write_urls(sub: SubPaths, urls: list[str]) -> int:
     sub.ensure()
     clean = sorted({u for u in urls if u})
@@ -238,7 +267,7 @@ def run_passive(
             lines, err = _tool_output(
                 "gau",
                 tool_path(settings, "gau"),
-                [host, "--threads", "1", "--subs"],
+                gau_args(host, settings),
                 input_text=None,
                 settings=settings,
             )

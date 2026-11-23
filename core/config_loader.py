@@ -54,6 +54,14 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         "httpx": "httpx",
         "ffuf": "ffuf",
     },
+    "gau": {
+        # waybackurls covers the Wayback CDX index in one request; gau's own
+        # Wayback provider paginates it and is slow on busy domains.
+        "providers": ["otx", "urlscan"],
+        "threads": 5,
+        "timeout": 20,
+        "extra_args": [],
+    },
     "defaults": {
         "rate_limit": 20,
         "concurrency": 10,

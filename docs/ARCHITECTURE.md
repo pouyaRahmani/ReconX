@@ -106,7 +106,8 @@ the files themselves, so `reconx status` works even without `state.json`.
 For each host:
 
 1. Run `waybackurls` with the host on stdin.
-2. Run `gau <host> --threads 1 --subs`.
+2. Run gau with the host and the flags from the `gau:` settings block
+   (`--providers`, `--threads`, `--timeout`, `--subs`).
 3. Pipe the combined output through `uro` (when available).
 4. Normalise each URL (`core.recon.urls.normalize_url`): lower-case host,
    IDNA, default-port removal, query sorting, fragment removal.
