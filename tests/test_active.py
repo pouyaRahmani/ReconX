@@ -168,6 +168,104 @@ def test_run_to_file_does_not_buffer_output(tmp_path):
     assert output.read_text(encoding="utf-8").split() == ["line1", "line2"]
 
 
+def test_run_to_file_kills_stalled_process(tmp_path):
+    """A child that writes once then hangs must be killed, keeping its output."""
+    import sys
+    import time
+
+    output = tmp_path / "out.txt"
+    started = time.monotonic()
+    result = run_to_file(
+        [sys.executable, "-c", "print('first', flush=True); import time; time.sleep(60)"],
+        output,
+        stall_timeout=1,
+        poll_interval=0.1,
+    )
+    elapsed = time.monotonic() - started
+
+    assert result.stalled is True
+    assert result.timed_out is True
+    assert elapsed < 20
+    assert output.read_text(encoding="utf-8").strip() == "first"
+
+
+def test_run_to_file_stops_at_output_cap(tmp_path):
+    import sys
+
+    output = tmp_path / "out.txt"
+    result = run_to_file(
+        [
+            sys.executable,
+            "-c",
+            "import sys\nwhile True: sys.stdout.write('x' * 4096); sys.stdout.flush()",
+        ],
+        output,
+        max_output_bytes=64 * 1024,
+        poll_interval=0.05,
+    )
+
+    assert result.stalled is True
+    assert output.stat().st_size >= 64 * 1024
+
+
+def test_katana_watchdog_settings():
+    settings = _settings()
+    assert active.katana_stall_timeout(settings) == 120.0
+    assert active.katana_max_output_bytes(settings) == 50 * 1048576
+
+    settings["timeouts"]["katana_stall"] = 0
+    settings["katana"]["max_output_mb"] = 0
+    assert active.katana_stall_timeout(settings) == 0.0
+    assert active.katana_max_output_bytes(settings) == 0
+
+    settings["timeouts"]["katana_stall"] = "oops"
+    settings["katana"]["max_output_mb"] = "oops"
+    assert active.katana_stall_timeout(settings) == 120.0
+    assert active.katana_max_output_bytes(settings) == 50 * 1048576
+
+
+def test_katana_command_omits_optional_budgets(tmp_path):
+    settings = _settings()
+    cmd = active._build_katana_command(
+        "api.example.com", settings, _cfg(), ActiveOptions()
+    )
+    assert "-ob" in cmd
+    assert "-ct" not in cmd
+    assert "-mdp" not in cmd
+
+    settings["katana"]["crawl_duration"] = "10m"
+    settings["katana"]["max_pages"] = 2000
+    cmd = active._build_katana_command(
+        "api.example.com", settings, _cfg(), ActiveOptions()
+    )
+    assert cmd[cmd.index("-ct") + 1] == "10m"
+    assert cmd[cmd.index("-mdp") + 1] == "2000"
+
+
+def test_crawl_keeps_partial_results_on_keyboard_interrupt(tmp_path, monkeypatch):
+    workspace = Workspace(tmp_path)
+    target_paths = workspace.target("acme").ensure()
+    sub = target_paths.sub(HOST).ensure()
+    sub.passive_file.write_text(f"https://{HOST}/\n", encoding="utf-8")
+
+    monkeypatch.setattr(active, "which", lambda tool: tool)
+    monkeypatch.setattr(active, "host_resolves", lambda host: True)
+
+    def fake_run(cmd, output_path, **kwargs):
+        with open(output_path, "w", encoding="utf-8") as handle:
+            handle.write(KATANA_LINE + "\n")
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(active, "run_to_file", fake_run)
+
+    with pytest.raises(SystemExit) as excinfo:
+        crawl_host(target_paths, HOST, _settings(), _cfg(), ActiveOptions())
+
+    assert excinfo.value.code == 130
+    assert "user/statistics" in sub.katana_file.read_text(encoding="utf-8")
+    assert sub.katana_requests_file.is_file()
+
+
 def test_crawl_keeps_partial_results_on_sigterm(tmp_path, monkeypatch):
     workspace = Workspace(tmp_path)
     target_paths = workspace.target("acme").ensure()

@@ -141,6 +141,17 @@ defaults:
   # Extra scope domains; when empty the seed registrable domain is used.
   scope_domains: []
 
+katana:
+  # Hard cap on the per-host JSONL capture, in MB (0 = no cap).  A crawler
+  # trap (infinite pagination, calendar-style URLs) otherwise writes gigabytes
+  # and exhausts RAM when the output is parsed.
+  max_output_mb: 50
+  # Optional katana-side budgets.  These flags (-ct / -mdp) only exist in
+  # recent katana releases, so they are omitted from the command line while
+  # empty.  Set e.g. crawl_duration: "10m" and max_pages: 2000 to enable them.
+  crawl_duration: ""
+  max_pages: 0
+
 timeouts:
   waybackurls: 180
   gau: 240
@@ -149,6 +160,10 @@ timeouts:
   # Per-request crawl timeout (seconds). Keep this small: dead or slow pages
   # otherwise stall a whole host for the full HTTP timeout.
   katana_request: 15
+  # Abort a host when katana emits nothing for this long.  A single response
+  # that keeps streaming (SSE, long-poll, chunked video) never trips katana's
+  # own -timeout, so a crawl can sit there forever.  0 disables the watchdog.
+  katana_stall: 120
   subfinder: 180
   nuclei: 1800
 

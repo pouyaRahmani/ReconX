@@ -13,6 +13,7 @@ import signal
 import socket
 import tempfile
 import threading
+import time
 from dataclasses import dataclass, field
 from urllib.parse import urljoin, urlsplit
 
@@ -32,6 +33,13 @@ from core.recon.urls import (
 KATANA_REQUIRED_FLAGS = ["-jsonl", "-silent", "-nc"]
 DEFAULT_KATANA_REQUEST_TIMEOUT = 15
 DEFAULT_MAX_SEEDS = 120
+#: Kill a host when katana has emitted nothing for this long.  A single
+#: response that keeps streaming (SSE, long-poll, chunked video) never trips
+#: katana's own -timeout, so the crawler can sit there indefinitely.
+DEFAULT_KATANA_STALL_TIMEOUT = 120
+#: Hard cap on captured JSONL per host.  Crawler traps (infinite pagination,
+#: calendar-style URLs) otherwise write gigabytes and exhaust RAM when parsed.
+DEFAULT_KATANA_MAX_OUTPUT_MB = 50
 
 
 class CrawlInterrupted(Exception):
@@ -342,6 +350,27 @@ def katana_request_timeout(settings: dict, cfg: TargetConfig) -> int:
     return max(3, min(int(cfg.timeout), configured))
 
 
+def katana_stall_timeout(settings: dict) -> float:
+    """Seconds without new output before a crawl is considered hung."""
+    try:
+        value = tool_timeout(settings, "katana_stall", DEFAULT_KATANA_STALL_TIMEOUT)
+    except (TypeError, ValueError):
+        return float(DEFAULT_KATANA_STALL_TIMEOUT)
+    return max(0.0, float(value))
+
+
+def katana_max_output_bytes(settings: dict) -> int:
+    """Byte cap for the per-host JSONL capture (0 disables the cap)."""
+    try:
+        value = (settings.get("katana") or {}).get(
+            "max_output_mb", DEFAULT_KATANA_MAX_OUTPUT_MB
+        )
+        megabytes = float(value)
+    except (TypeError, ValueError):
+        megabytes = float(DEFAULT_KATANA_MAX_OUTPUT_MB)
+    return max(0, int(megabytes * 1048576))
+
+
 def _build_katana_command(
     host: str,
     settings: dict,
@@ -354,6 +383,7 @@ def _build_katana_command(
         tool,
         *KATANA_REQUIRED_FLAGS,
         "-or",                       # omit raw request/response blobs
+        "-ob",                       # omit response bodies (huge, unused here)
         "-fx",                       # extract form fields into JSONL
     ]
     if options.js_crawl:
@@ -379,6 +409,19 @@ def _build_katana_command(
         cmd.extend(["-proxy", cfg.proxy])
     for key, value in {**cfg.headers, **options.extra_headers}.items():
         cmd.extend(["-H", f"{key}: {value}"])
+
+    # Optional katana-side budgets.  These flags are only recent releases, so
+    # they are omitted unless the operator opts in via settings.yaml.
+    katana_cfg = settings.get("katana") or {}
+    duration = str(katana_cfg.get("crawl_duration") or "").strip()
+    if duration:
+        cmd.extend(["-ct", duration])
+    try:
+        max_pages = int(katana_cfg.get("max_pages") or 0)
+    except (TypeError, ValueError):
+        max_pages = 0
+    if max_pages > 0:
+        cmd.extend(["-mdp", str(max_pages)])
     return cmd
 
 
@@ -443,34 +486,55 @@ def crawl_host(
     fd, tmp_path = tempfile.mkstemp(prefix="reconx-katana-", suffix=".jsonl")
     os.close(fd)
     stop = threading.Event()
+    stall_timeout = katana_stall_timeout(settings)
+    max_output = katana_max_output_bytes(settings)
 
     def _progress() -> None:
+        last_size = -1
+        last_change = time.monotonic()
         while not stop.wait(15):
             try:
                 size = os.path.getsize(tmp_path)
             except OSError:
                 continue
-            ui.info(f"{host}: crawling ... {size / 1048576:.1f} MB captured")
+            now = time.monotonic()
+            if size != last_size:
+                last_size = size
+                last_change = now
+            idle = now - last_change
+            suffix = f" — no new output for {int(idle)}s" if idle >= 30 else ""
+            ui.info(f"{host}: crawling ... {size / 1048576:.1f} MB captured{suffix}")
 
     progress = threading.Thread(target=_progress, daemon=True)
     progress.start()
     previous_handler = _install_sigterm_handler()
     interrupted = False
     try:
-        result = run_to_file(
-            cmd,
-            tmp_path,
-            input_text="\n".join(seeds) + "\n",
-            timeout=options.timeout or tool_timeout(settings, "katana", 900),
-        )
-    except CrawlInterrupted:
-        interrupted = True
-        result = ProcResult(
-            args=cmd,
-            returncode=143,
-            stderr="terminated by SIGTERM",
-            timed_out=True,
-        )
+        try:
+            result = run_to_file(
+                cmd,
+                tmp_path,
+                input_text="\n".join(seeds) + "\n",
+                timeout=options.timeout or tool_timeout(settings, "katana", 900),
+                stall_timeout=stall_timeout,
+                max_output_bytes=max_output,
+            )
+        except CrawlInterrupted:
+            interrupted = True
+            result = ProcResult(
+                args=cmd,
+                returncode=143,
+                stderr="terminated by SIGTERM",
+            )
+        except KeyboardInterrupt:
+            # Keep whatever katana already wrote instead of throwing the whole
+            # host away; the interrupt is re-raised after the results are saved.
+            interrupted = True
+            result = ProcResult(
+                args=cmd,
+                returncode=130,
+                stderr="interrupted by user",
+            )
     finally:
         stop.set()
         _restore_sigterm_handler(previous_handler)
@@ -489,10 +553,22 @@ def crawl_host(
             pass
     stats.errors.extend(parse_errors)
 
-    if result.timed_out:
+    if result.stalled:
+        reason = (
+            f"capture limit of {max_output / 1048576:.0f} MB reached"
+            if max_output and captured >= max_output
+            else f"no new output for {stall_timeout:.0f}s"
+        )
+        message = (
+            f"{host}: katana stopped making progress ({reason}) — "
+            "killed it and kept the partial results"
+        )
+        stats.errors.append(message)
+        ui.warn(message)
+    elif result.timed_out:
         stats.errors.append("katana timed out")
         ui.warn("katana timed out — results captured so far will still be used")
-    if result.returncode not in (0, 124) and captured == 0:
+    if result.returncode not in (0, 124, 130, 143) and captured == 0:
         detail = (result.stderr or "").strip().splitlines()
         message = f"katana failed (rc={result.returncode}): {detail[-1] if detail else 'unknown error'}"
         stats.errors.append(message)
@@ -527,10 +603,15 @@ def crawl_host(
     stats.urls = len(urls)
     stats.requests = len(clean_records)
     if interrupted:
-        note = _interrupt_context(host)
+        if result.returncode == 130:
+            note = f"{host}: interrupted by user"
+            code = 130
+        else:
+            note = _interrupt_context(host)
+            code = 143
         stats.errors.append(note)
         ui.warn(f"{note} — partial crawl results saved")
-        raise SystemExit(143)
+        raise SystemExit(code)
     if stats.requests:
         ui.ok(
             f"{host}: {stats.urls} URL(s), {stats.requests} structured request(s), "

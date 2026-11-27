@@ -123,16 +123,32 @@ For each host:
 Katana is run with:
 
 ```
--jsonl -silent -nc -or -fx -jc -jsl -kf all -aff -fs fqdn -d N
+-jsonl -silent -nc -or -ob -fx -jc -jsl -kf all -aff -fs fqdn -d N
 -timeout T -rl R -c C -ef <static extensions>
 ```
 
 `-jsonl` gives structured records; `_normalise_record` extracts
 `request.endpoint`, `request.method`, `request.body`, headers, status and forms.
-Only records whose host matches the target subdomain are kept. Both plain URLs
-(`<host>.katana`) and structured requests
+`-or` drops the raw request/response blobs and `-ob` drops response bodies —
+ReconX never reads them, and they are what makes a single host produce tens of
+megabytes of JSONL. Only records whose host matches the target subdomain are
+kept. Both plain URLs (`<host>.katana`) and structured requests
 (`<host>.katana.requests.jsonl`) are written. Existing crawl output is reused
 unless `--refresh` is passed.
+
+`run_to_file` supervises katana with two guards, because katana can stop
+emitting output without exiting:
+
+- `timeouts.katana_stall` (default 120s) kills the process when the capture
+  file has not grown for that long. Katana's own `-timeout` covers the request
+  handshake, not a body that streams forever (SSE, long-poll, chunked video),
+  so a single such endpoint can otherwise wedge the whole host.
+- `katana.max_output_mb` (default 50) stops a crawl that falls into a crawler
+  trap before it writes gigabytes.
+
+Both cases keep the partial results. `SIGINT` (Ctrl+C) and `SIGTERM` also save
+whatever was captured before exiting, and the temporary JSONL is always
+removed.
 
 ---
 

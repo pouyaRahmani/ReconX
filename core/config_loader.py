@@ -90,11 +90,22 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         "exclude_extensions": [e.lstrip(".") for e in DEFAULT_STATIC_EXTENSIONS],
         "scope_domains": [],
     },
+    "katana": {
+        # Hard cap on the per-host JSONL capture, in MB (0 disables the cap).
+        "max_output_mb": 50,
+        # Optional katana-side budgets; only emitted when set, because -ct and
+        # -mdp are not available in older katana releases.
+        "crawl_duration": "",
+        "max_pages": 0,
+    },
     "timeouts": {
         "waybackurls": 180,
         "gau": 240,
         "uro": 120,
         "katana": 900,
+        "katana_request": 15,
+        # Kill a crawl that stops producing output for this long (0 disables).
+        "katana_stall": 120,
         "subfinder": 180,
         "nuclei": 1800,
     },
